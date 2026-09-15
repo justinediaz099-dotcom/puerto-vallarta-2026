@@ -36,6 +36,18 @@ updates within a minute or two.
 `time` is optional — untimed items sort to the bottom of the day. `type` picks the icon:
 `flight`, `food`, `beach`, `tour`, `drive`, `rest`, `event`.
 
+## The background photo
+
+`docs/img/sunset-1280.jpg` (desktop) and `docs/img/sunset-900.jpg` (phones) are the same
+Puerto Vallarta sunset, self-hosted so nothing breaks if an external site goes down. It's
+[this photo](https://commons.wikimedia.org/wiki/File:Puerto_Vallarta,_Mexico_-_March_2023_-_015.jpg)
+by **Another Believer**, licensed **CC BY-SA 4.0** — that license requires the credit to
+stay visible, which is why it appears in the corner of the header and in the footer.
+
+To swap the image: drop replacements at the same two paths and update the `PHOTO` constant
+with the new author and license. The framing is controlled by `background-position` on
+`.hero` (currently `center 22%`, which keeps the sun in frame at any hero height).
+
 ## Notes
 
 - **Times are local to each airport.** Puerto Vallarta is on CST (UTC−6) year-round since
