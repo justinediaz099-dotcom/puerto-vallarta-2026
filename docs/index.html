@@ -78,11 +78,13 @@
           checkInTime: "3:00 PM", checkOutTime: "12:00 PM",
           confirmation: "73511201944453",   // Hotels.com itinerary number
           bookedVia: "Hotels.com",
-          guests: "2 adults, 1 room",
+          guests: "4 adults, 2 rooms",
           room: "Exclusive Penthouse 2 — Casa Doña Ernestina",
           reservedFor: "Justin Diaz",
           phone: null,
           notes: "Private 360° terrace with a plunge pool. Non-smoking.",
+          // Set to null once the room count is sorted out with Hotels.com.
+          flag: "The Hotels.com confirmation on hand lists only 2 adults / 1 room. Worth confirming the second room before arrival.",
         },
       ];
 
@@ -117,7 +119,20 @@
           ],
         },
         { date: "2026-10-01", title: null, items: [] },
-        { date: "2026-10-02", title: null, items: [] },
+        {
+          date: "2026-10-02",
+          title: null,
+          items: [
+            {
+              time: "9:00 PM", type: "food",
+              title: "Dinner at Café des Artistes — table for 4",
+              note: "In Col. Centro, roughly a 10–15 min walk south from the hotel or a short taxi.",
+              address: "Café des Artistes, Guadalupe Sánchez 740, Col. Centro, 48300 Puerto Vallarta",
+              phone: "322 226 7200", phoneDial: "+523222267200",
+              confirmation: "OpenTable #2109928235",
+            },
+          ],
+        },
         { date: "2026-10-03", title: null, items: [] },
         { date: "2026-10-04", title: null, items: [] },
         {
@@ -275,6 +290,7 @@
 
         .stay-name { font-family: 'Bebas Neue', cursive; font-size: 21px; letter-spacing: 1px; color: #fff; line-height: 1.15; }
         .stay-room { font-size: 13px; color: #ffb069; margin-top: 6px; }
+        .stay-flag { margin-top: 12px; font-size: 12.5px; line-height: 1.5; color: #ffd08a; background: rgba(255,168,76,0.09); border: 1px solid rgba(255,168,76,0.28); border-radius: 9px; padding: 9px 11px; }
 
         .idea { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.055); }
         .idea:last-child { border-bottom: none; }
@@ -563,6 +579,7 @@
                       {s.reservedFor && <div className="meta-pill">Under: <b>{s.reservedFor}</b></div>}
                       {s.phone && <div className="meta-pill">Phone: <b>{s.phone}</b></div>}
                     </div>
+                    {s.flag && <div className="stay-flag">⚠️ {s.flag}</div>}
                   </div>
                 ))}
               </div>
