@@ -69,14 +69,21 @@
 
       // Where you're staying. Add an entry per hotel/rental; leave [] if not booked.
       const STAYS = [
-        // {
-        //   name: "Hotel name",
-        //   area: "Zona Romántica",
-        //   address: "Full street address, Puerto Vallarta, Jal.",
-        //   checkIn: "2026-09-30", checkOut: "2026-10-05",
-        //   checkInTime: "3:00 PM", checkOutTime: "12:00 PM",
-        //   confirmation: null, phone: null, notes: null,
-        // },
+        {
+          name: "The Paramar Beachfront Boutique Hotel",
+          shortName: "The Paramar",          // used on the Overview tile, where space is tight
+          area: "Downtown Malecón · Col. 5 de Diciembre",
+          address: "Calle Paraguay 1272, Col. 5 de Diciembre, Puerto Vallarta, JAL 48350, Mexico",
+          checkIn: "2026-09-30", checkOut: "2026-10-05",
+          checkInTime: "3:00 PM", checkOutTime: "12:00 PM",
+          confirmation: "73511201944453",   // Hotels.com itinerary number
+          bookedVia: "Hotels.com",
+          guests: "2 adults, 1 room",
+          room: "Exclusive Penthouse 2 — Casa Doña Ernestina",
+          reservedFor: "Justin Diaz",
+          phone: null,
+          notes: "Private 360° terrace with a plunge pool. Non-smoking.",
+        },
       ];
 
       // Who's coming. Leave [] to hide the section.
@@ -95,6 +102,8 @@
             { time: "7:30 AM", type: "drive", title: "Get to TIJ airport", note: "Aim for ~2 hrs before takeoff for a domestic flight." },
             { time: "9:34 AM", type: "flight", title: "TIJ → PVR takeoff", note: "2 hr 43 min in the air." },
             { time: "1:17 PM", type: "flight", title: "Land in Puerto Vallarta", note: "Set your watch forward 1 hour." },
+            { time: "2:00 PM", type: "drive", title: "Taxi to The Paramar", note: "Col. 5 de Diciembre is one of the closer neighborhoods to the airport — roughly 10–15 min without traffic. Buy the taxi voucher inside the terminal." },
+            { time: "3:00 PM", type: "rest", title: "Check in at The Paramar", note: "Penthouse with the 360° terrace and plunge pool." },
           ],
         },
         { date: "2026-10-01", title: null, items: [] },
@@ -105,7 +114,8 @@
           date: "2026-10-05",
           title: "Fly home",
           items: [
-            { time: "11:00 AM", type: "drive", title: "Head to PVR airport", note: "Roughly 15–20 min from Zona Romántica without traffic." },
+            { time: "11:00 AM", type: "rest", title: "Check out", note: "Hard deadline is 12:00 PM. Front desk can usually hold bags if you want the morning." },
+            { time: "11:20 AM", type: "drive", title: "Head to PVR airport", note: "About 10–15 min from the hotel without traffic. Puts you at the terminal ~2 hrs early." },
             { time: "1:56 PM", type: "flight", title: "PVR → TIJ takeoff", note: "2 hr 39 min in the air." },
             { time: "3:35 PM", type: "flight", title: "Land in Tijuana", note: "Clocks go back 1 hour." },
           ],
@@ -249,6 +259,9 @@
         .item-title { font-size: 14px; font-weight: 500; color: #fff; }
         .item-note { font-size: 12.5px; color: rgba(255,255,255,0.5); margin-top: 3px; line-height: 1.45; }
         .empty { padding: 18px 0 8px; font-size: 13px; color: rgba(255,255,255,0.35); font-style: italic; }
+
+        .stay-name { font-family: 'Bebas Neue', cursive; font-size: 21px; letter-spacing: 1px; color: #fff; line-height: 1.15; }
+        .stay-room { font-size: 13px; color: #ffb069; margin-top: 6px; }
 
         .idea { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.055); }
         .idea:last-child { border-bottom: none; }
@@ -485,7 +498,7 @@
                 <div className="stat-key">{fmtDate(TRIP.startDate, { month: "short", day: "numeric" })} – {fmtDate(TRIP.endDate, { month: "short", day: "numeric" })}</div>
               </div>
               <div className="stat">
-                <div className="stat-val">{STAYS.length ? STAYS[0].name : "Not booked"}</div>
+                <div className="stat-val">{STAYS.length ? (STAYS[0].shortName || STAYS[0].name) : "Not booked"}</div>
                 <div className="stat-key">Where we're staying</div>
               </div>
               <div className="stat">
@@ -498,20 +511,24 @@
                 <div className="section-title" style={{ marginTop: 24 }}>Stay</div>
                 {STAYS.map((s) => (
                   <div className="card" key={s.name}>
-                    <div className="item-title">{s.name}</div>
+                    <div className="stay-name">{s.name}</div>
                     {s.area && <div className="item-note">{s.area}</div>}
+                    {s.room && <div className="stay-room">{s.room}</div>}
+                    {s.notes && <div className="item-note">{s.notes}</div>}
                     {s.address && (
-                      <div className="item-note">
+                      <div className="item-note" style={{ marginTop: 8 }}>
                         <a className="idea-link" target="_blank" rel="noreferrer"
-                           href={"https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(s.address)}>
+                           href={"https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(s.name + ", " + s.address)}>
                           {s.address} ↗
                         </a>
                       </div>
                     )}
                     <div className="flight-meta">
-                      {s.checkIn && <div className="meta-pill">Check in: <b>{fmtDate(s.checkIn, { month: "short", day: "numeric" })}{s.checkInTime ? " " + s.checkInTime : ""}</b></div>}
-                      {s.checkOut && <div className="meta-pill">Check out: <b>{fmtDate(s.checkOut, { month: "short", day: "numeric" })}{s.checkOutTime ? " " + s.checkOutTime : ""}</b></div>}
-                      {s.confirmation && <div className="meta-pill">Confirmation: <b>{s.confirmation}</b></div>}
+                      {s.checkIn && <div className="meta-pill">Check in: <b>{fmtDate(s.checkIn, { weekday: "short", month: "short", day: "numeric" })}{s.checkInTime ? " · " + s.checkInTime : ""}</b></div>}
+                      {s.checkOut && <div className="meta-pill">Check out: <b>{fmtDate(s.checkOut, { weekday: "short", month: "short", day: "numeric" })}{s.checkOutTime ? " · " + s.checkOutTime : ""}</b></div>}
+                      {s.guests && <div className="meta-pill">{s.guests}</div>}
+                      {s.confirmation && <div className="meta-pill">{s.bookedVia || "Confirmation"}: <b>{s.confirmation}</b></div>}
+                      {s.reservedFor && <div className="meta-pill">Under: <b>{s.reservedFor}</b></div>}
                       {s.phone && <div className="meta-pill">Phone: <b>{s.phone}</b></div>}
                     </div>
                   </div>
