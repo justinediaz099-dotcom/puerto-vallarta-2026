@@ -93,7 +93,9 @@
 
       /* Day-by-day plan. One object per date; `items` can be empty and the day
          will render an empty state. `time` is optional — untimed items sort last.
-         `type` picks the icon: flight, food, beach, tour, drive, rest, event. */
+         `type` picks the icon: flight, food, beach, tour, hotel, drive, rest, event.
+         Optional per item: `address` (becomes a Maps link), `phone` + `phoneDial`
+         (becomes a tap-to-call link), `confirmation`, `link`. */
       const DAYS = [
         {
           date: "2026-09-30",
@@ -103,7 +105,15 @@
             { time: "9:34 AM", type: "flight", title: "TIJ → PVR takeoff", note: "2 hr 43 min in the air." },
             { time: "1:17 PM", type: "flight", title: "Land in Puerto Vallarta", note: "Set your watch forward 1 hour." },
             { time: "2:00 PM", type: "drive", title: "Taxi to The Paramar", note: "Col. 5 de Diciembre is one of the closer neighborhoods to the airport — roughly 10–15 min without traffic. Buy the taxi voucher inside the terminal." },
-            { time: "3:00 PM", type: "rest", title: "Check in at The Paramar", note: "Penthouse with the 360° terrace and plunge pool." },
+            { time: "3:00 PM", type: "hotel", title: "Check in at The Paramar", note: "Penthouse with the 360° terrace and plunge pool." },
+            {
+              time: "7:00 PM", type: "food",
+              title: "Dinner at La Leche — table for 4",
+              note: "On Blvd. Francisco Medina Ascencio in the Zona Hotelera, a short taxi north from the hotel.",
+              address: "La Leche Restaurante, Boulevard Francisco Medina Ascencio Km. 2, Zona Hotelera, 48333 Puerto Vallarta",
+              phone: "322 293 0901", phoneDial: "+523222930901",
+              confirmation: "OpenTable #86905",
+            },
           ],
         },
         { date: "2026-10-01", title: null, items: [] },
@@ -114,7 +124,7 @@
           date: "2026-10-05",
           title: "Fly home",
           items: [
-            { time: "11:00 AM", type: "rest", title: "Check out", note: "Hard deadline is 12:00 PM. Front desk can usually hold bags if you want the morning." },
+            { time: "11:00 AM", type: "hotel", title: "Check out", note: "Hard deadline is 12:00 PM. Front desk can usually hold bags if you want the morning." },
             { time: "11:20 AM", type: "drive", title: "Head to PVR airport", note: "About 10–15 min from the hotel without traffic. Puts you at the terminal ~2 hrs early." },
             { time: "1:56 PM", type: "flight", title: "PVR → TIJ takeoff", note: "2 hr 39 min in the air." },
             { time: "3:35 PM", type: "flight", title: "Land in Tijuana", note: "Clocks go back 1 hour." },
@@ -122,11 +132,9 @@
         },
       ];
 
-      // Shortlist of things to eat / do. Nothing is committed until it lands in DAYS.
-      const IDEAS = [
-        { cat: "Eat",  name: "Add your spots here", note: "Edit IDEAS in docs/index.html", link: null },
-        { cat: "Do",   name: "Add activities here", note: "Marietas, Yelapa, Malecón, whale season starts Dec", link: null },
-      ];
+      /* Shortlist of maybes. Nothing here is committed until it lands in DAYS.
+         Shape: { cat: "Eat" | "Do", name, note, link } */
+      const IDEAS = [];
 
       const PACKING = [
         { cat: "Documents", items: ["ID / passport", "Boarding passes", "Hotel confirmation", "Cash in pesos", "Backup card"] },
@@ -155,7 +163,7 @@
       ];
 
       const TYPE_ICONS = {
-        flight: "✈️", food: "🍽️", beach: "🏖️", tour: "🗺️",
+        flight: "✈️", food: "🍽️", beach: "🏖️", tour: "🗺️", hotel: "🏨",
         drive: "🚕", rest: "😴", event: "🎉", default: "📍",
       };
 
@@ -259,6 +267,11 @@
         .item-title { font-size: 14px; font-weight: 500; color: #fff; }
         .item-note { font-size: 12.5px; color: rgba(255,255,255,0.5); margin-top: 3px; line-height: 1.45; }
         .empty { padding: 18px 0 8px; font-size: 13px; color: rgba(255,255,255,0.35); font-style: italic; }
+        .item-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+        .item-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; color: rgba(255,255,255,0.78); background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 7px; padding: 4px 9px; text-decoration: none; white-space: nowrap; }
+        .item-chip:hover { border-color: rgba(255,176,105,0.6); color: #ffb069; }
+        .item-chip.static { color: rgba(255,255,255,0.5); background: transparent; border-style: dashed; }
+        .item-chip.static:hover { border-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.5); }
 
         .stay-name { font-family: 'Bebas Neue', cursive; font-size: 21px; letter-spacing: 1px; color: #fff; line-height: 1.15; }
         .stay-room { font-size: 13px; color: #ffb069; margin-top: 6px; }
@@ -472,9 +485,28 @@
                   <div className="item" key={i}>
                     <div className={"item-time" + (it.time ? "" : " none")}>{it.time || "—"}</div>
                     <div className="item-icon">{TYPE_ICONS[it.type] || TYPE_ICONS.default}</div>
-                    <div>
+                    <div style={{ minWidth: 0 }}>
                       <div className="item-title">{it.title}</div>
                       {it.note && <div className="item-note">{it.note}</div>}
+                      {(it.address || it.phone || it.confirmation || it.link) && (
+                        <div className="item-meta">
+                          {it.address && (
+                            <a className="item-chip" target="_blank" rel="noreferrer"
+                               href={"https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(it.address)}>
+                              📍 Map
+                            </a>
+                          )}
+                          {it.phone && (
+                            <a className="item-chip" href={"tel:" + (it.phoneDial || it.phone.replace(/\s/g, ""))}>
+                              📞 {it.phone}
+                            </a>
+                          )}
+                          {it.link && (
+                            <a className="item-chip" href={it.link} target="_blank" rel="noreferrer">🔗 Details</a>
+                          )}
+                          {it.confirmation && <span className="item-chip static">{it.confirmation}</span>}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))
@@ -639,8 +671,11 @@
               {tab === "ideas" && (
                 <div>
                   <div className="section-title">Ideas</div>
-                  <div className="section-note">Nothing here is committed — move things onto the itinerary once they're decided.</div>
+                  <div className="section-note">Maybes and suggestions. Nothing here is committed until it moves onto the itinerary.</div>
                   <div className="card">
+                    {IDEAS.length === 0 && (
+                      <div className="empty">Nothing on the shortlist yet — send Justin anything worth adding.</div>
+                    )}
                     {IDEAS.map((idea, i) => (
                       <div className="idea" key={i}>
                         <span className="idea-cat">{idea.cat}</span>
