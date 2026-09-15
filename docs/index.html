@@ -22,7 +22,7 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <script type="text/babel">
-      const { useState, useEffect, useMemo, useCallback } = React;
+      const { useState, useEffect, useMemo } = React;
 
       /* ========================================================================
          TRIP DATA — this is the only part you need to edit as plans firm up.
@@ -146,34 +146,11 @@
         },
       ];
 
-      /* Shortlist of maybes. Nothing here is committed until it lands in DAYS.
-         Shape: { cat: "Eat" | "Do", name, note, link } */
-      const IDEAS = [];
-
-      const PACKING = [
-        { cat: "Documents", items: ["ID / passport", "Boarding passes", "Hotel confirmation", "Cash in pesos", "Backup card"] },
-        { cat: "Beach", items: ["Swimsuits", "Reef-safe sunscreen", "Sunglasses", "Hat", "Flip flops", "Dry bag"] },
-        { cat: "Clothes", items: ["Light breathable shirts", "Shorts", "One nicer outfit", "Rain shell (Oct = tail of rainy season)", "Bug spray"] },
-        { cat: "Tech", items: ["Phone + charger", "Battery pack", "Headphones", "Offline maps downloaded"] },
-      ];
-
-      const KNOW_BEFORE = [
-        { icon: "🕐", title: "1 hour ahead", body: "Puerto Vallarta runs on CST (UTC−6) year-round — Mexico dropped daylight saving in 2022. Tijuana is on PDT (UTC−7) until Nov 1. So PVR is 1 hour ahead of home for this whole trip." },
-        { icon: "🌦️", title: "End of rainy season", body: "Early October is the tail of the wet season: hot and humid, highs around 88°F / 31°C, lows near 75°F / 24°C, with short heavy afternoon storms. It's also still hurricane season, which runs through November — worth watching the forecast the week before." },
-        { icon: "💧", title: "Drink bottled water", body: "Stick to bottled or purified water, including for brushing teeth. Most hotels supply it." },
-        { icon: "💵", title: "Pay in pesos", body: "Paying in pesos beats letting a terminal convert for you. Withdraw from bank ATMs rather than airport kiosks, and decline the machine's conversion offer." },
-        { icon: "🚕", title: "Getting around", body: "Authorized airport taxis are prepaid inside the terminal. Uber operates in PVR but can't legally pick up at the airport curb — plan on a taxi for the arrival leg." },
-      ];
-
       /* ===================== end of editable data ===================== */
 
       const TABS = [
         { id: "overview",  label: "Overview" },
-        { id: "flights",   label: "Flights" },
         { id: "itinerary", label: "Itinerary" },
-        { id: "ideas",     label: "Ideas" },
-        { id: "packing",   label: "Packing" },
-        { id: "info",      label: "Good to know" },
       ];
 
       const TYPE_ICONS = {
@@ -291,28 +268,11 @@
         .stay-room { font-size: 13px; color: #ffb069; margin-top: 6px; }
         .stay-flag { margin-top: 12px; font-size: 12.5px; line-height: 1.5; color: #ffd08a; background: rgba(255,168,76,0.09); border: 1px solid rgba(255,168,76,0.28); border-radius: 9px; padding: 9px 11px; }
 
-        .idea { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.055); }
-        .idea:last-child { border-bottom: none; }
-        .idea-cat { font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; color: #ffb069; background: rgba(255,154,82,0.12); border-radius: 6px; padding: 4px 8px; flex-shrink: 0; margin-top: 1px; }
-        .idea-name { font-size: 14px; font-weight: 500; color: #fff; }
-        .idea-note { font-size: 12.5px; color: rgba(255,255,255,0.5); margin-top: 2px; }
-        .idea-link { font-size: 12px; color: #ffb069; text-decoration: none; }
-        .idea-link:hover { text-decoration: underline; }
+        .text-link { font-size: 12px; color: #ffb069; text-decoration: none; }
+        .text-link:hover { text-decoration: underline; }
 
-        .pack-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
-        .pack-cat { font-family: 'Bebas Neue', cursive; font-size: 16px; letter-spacing: 1.5px; color: #ffb069; margin-bottom: 8px; }
-        .check { display: flex; align-items: flex-start; gap: 9px; padding: 6px 0; cursor: pointer; user-select: none; font-size: 13.5px; color: rgba(255,255,255,0.82); line-height: 1.4; }
-        .check input { appearance: none; width: 17px; height: 17px; flex-shrink: 0; margin-top: 1px; border: 1.5px solid rgba(255,255,255,0.28); border-radius: 5px; cursor: pointer; position: relative; transition: all .15s; }
-        .check input:checked { background: linear-gradient(135deg, #ffb069, #ff7a5c); border-color: transparent; }
-        .check input:checked::after { content: '✓'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #08131c; font-size: 12px; font-weight: 700; }
-        .check.done { color: rgba(255,255,255,0.34); text-decoration: line-through; }
-        .pack-progress { font-size: 12px; color: rgba(255,255,255,0.45); margin-bottom: 14px; }
-
-        .know { display: flex; gap: 14px; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.055); }
-        .know:last-child { border-bottom: none; }
-        .know-icon { font-size: 22px; line-height: 1; flex-shrink: 0; }
-        .know-title { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 3px; }
-        .know-body { font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.55; }
+        /* Section headings inside a tab, below the first one. */
+        .subsection { margin-top: 30px; }
 
         .footer { padding: 22px 28px 34px; text-align: center; font-size: 11.5px; color: rgba(255,255,255,0.34); border-top: 1px solid rgba(255,255,255,0.06); line-height: 1.6; }
         .footer-link { color: rgba(255,255,255,0.52); text-decoration: none; border-bottom: 1px solid rgba(255,255,255,0.18); }
@@ -333,7 +293,6 @@
           .content { padding: 20px 18px 48px; }
           .footer { padding: 20px 18px 30px; }
           .stat-row { grid-template-columns: 1fr; }
-          .pack-grid { grid-template-columns: 1fr; }
           .item { grid-template-columns: 56px 22px 1fr; gap: 8px; }
           .flight, .card { padding: 16px; }
         }
@@ -385,27 +344,6 @@
           mins: Math.floor((diff % 3600000) / 60000),
           secs: Math.floor((diff % 60000) / 1000),
         };
-      }
-
-      // Checklist state persists per device via localStorage — it is not shared
-      // between people, since the page is static.
-      function useChecklist(key) {
-        const [checked, setChecked] = useState(() => {
-          try {
-            return JSON.parse(localStorage.getItem(key) || "{}");
-          } catch (e) {
-            return {};
-          }
-        });
-        useEffect(() => {
-          try {
-            localStorage.setItem(key, JSON.stringify(checked));
-          } catch (e) { /* private mode — checkboxes just won't persist */ }
-        }, [key, checked]);
-        const toggle = useCallback((id) => {
-          setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
-        }, []);
-        return [checked, toggle];
       }
 
       /* ----------------------------- components ---------------------------- */
@@ -553,9 +491,15 @@
                 <div className="stat-key">On the itinerary</div>
               </div>
             </div>
+            <div className="subsection">
+              <div className="section-title">Flights</div>
+              <div className="section-note">Times are local to each airport. Puerto Vallarta is 1 hour ahead of Tijuana.</div>
+              {FLIGHTS.map((f) => <FlightCard f={f} key={f.id} />)}
+            </div>
+
             {STAYS.length > 0 && (
-              <div>
-                <div className="section-title" style={{ marginTop: 24 }}>Stay</div>
+              <div className="subsection">
+                <div className="section-title">Hotel</div>
                 {STAYS.map((s) => (
                   <div className="card" key={s.name}>
                     <div className="stay-name">{s.name}</div>
@@ -564,7 +508,7 @@
                     {s.notes && <div className="item-note">{s.notes}</div>}
                     {s.address && (
                       <div className="item-note" style={{ marginTop: 8 }}>
-                        <a className="idea-link" target="_blank" rel="noreferrer"
+                        <a className="text-link" target="_blank" rel="noreferrer"
                            href={"https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(s.name + ", " + s.address)}>
                           {s.address} ↗
                         </a>
@@ -584,8 +528,8 @@
               </div>
             )}
             {TRAVELERS.length > 0 && (
-              <div>
-                <div className="section-title" style={{ marginTop: 24 }}>Who's going</div>
+              <div className="subsection">
+                <div className="section-title">Who's going</div>
                 <div className="card">
                   <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                     {TRAVELERS.map((t) => (
@@ -595,35 +539,6 @@
                 </div>
               </div>
             )}
-          </div>
-        );
-      }
-
-      function Packing() {
-        const [checked, toggle] = useChecklist("pv2026-packing");
-        const all = PACKING.flatMap((g) => g.items.map((i) => g.cat + "/" + i));
-        const done = all.filter((id) => checked[id]).length;
-        return (
-          <div>
-            <div className="section-title">Packing</div>
-            <div className="section-note">Saved on this device only — everyone gets their own checkboxes.</div>
-            <div className="pack-progress">{done} of {all.length} packed</div>
-            <div className="pack-grid">
-              {PACKING.map((g) => (
-                <div className="card" key={g.cat}>
-                  <div className="pack-cat">{g.cat}</div>
-                  {g.items.map((item) => {
-                    const id = g.cat + "/" + item;
-                    return (
-                      <label className={"check" + (checked[id] ? " done" : "")} key={id}>
-                        <input type="checkbox" checked={!!checked[id]} onChange={() => toggle(id)} />
-                        <span>{item}</span>
-                      </label>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
           </div>
         );
       }
@@ -668,14 +583,6 @@
             <main className="content">
               {tab === "overview" && <Overview />}
 
-              {tab === "flights" && (
-                <div>
-                  <div className="section-title">Flights</div>
-                  <div className="section-note">Times shown are local to each airport. Puerto Vallarta is 1 hour ahead of Tijuana.</div>
-                  {FLIGHTS.map((f) => <FlightCard f={f} key={f.id} />)}
-                </div>
-              )}
-
               {tab === "itinerary" && (
                 <div>
                   <div className="section-title">Day by day</div>
@@ -684,49 +591,6 @@
                 </div>
               )}
 
-              {tab === "ideas" && (
-                <div>
-                  <div className="section-title">Ideas</div>
-                  <div className="section-note">Maybes and suggestions. Nothing here is committed until it moves onto the itinerary.</div>
-                  <div className="card">
-                    {IDEAS.length === 0 && (
-                      <div className="empty">Nothing on the shortlist yet — send Justin anything worth adding.</div>
-                    )}
-                    {IDEAS.map((idea, i) => (
-                      <div className="idea" key={i}>
-                        <span className="idea-cat">{idea.cat}</span>
-                        <div style={{ minWidth: 0 }}>
-                          <div className="idea-name">{idea.name}</div>
-                          {idea.note && <div className="idea-note">{idea.note}</div>}
-                          {idea.link && (
-                            <a className="idea-link" href={idea.link} target="_blank" rel="noreferrer">Open ↗</a>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {tab === "packing" && <Packing />}
-
-              {tab === "info" && (
-                <div>
-                  <div className="section-title">Good to know</div>
-                  <div className="section-note">General guidance, not a forecast — check the weather again the week before.</div>
-                  <div className="card">
-                    {KNOW_BEFORE.map((k) => (
-                      <div className="know" key={k.title}>
-                        <div className="know-icon">{k.icon}</div>
-                        <div>
-                          <div className="know-title">{k.title}</div>
-                          <div className="know-body">{k.body}</div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
             </main>
 
             <footer className="footer">

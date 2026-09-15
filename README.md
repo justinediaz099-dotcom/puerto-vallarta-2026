@@ -2,7 +2,9 @@
 
 Shareable trip page for **Tijuana → Puerto Vallarta, Sept 30 – Oct 5, 2026**.
 
-Live link (once GitHub Pages is on): `https://<your-username>.github.io/puerto-vallarta-2026/`
+Live: **https://justinediaz099-dotcom.github.io/puerto-vallarta-2026/**
+
+Two tabs: **Overview** (countdown, flights, hotel) and **Itinerary** (day by day).
 
 ## How it works
 
@@ -20,21 +22,26 @@ updates within a minute or two.
 |---|---|
 | `TRIP` | Title, trip dates, and the countdown target |
 | `FLIGHTS` | Both legs. Fill in `airline`, `flightNo`, `confirmation`, `seats` as you get them — blank fields show as dashed "TBD" pills |
-| `STAYS` | Hotel/rental. Uncomment the example and fill it in; the address auto-links to Google Maps |
+| `STAYS` | Hotel(s), shown in the Overview's Hotel section. The address auto-links to Google Maps. Set `flag` to a string to surface an open question on the card, `null` to hide it |
 | `TRAVELERS` | Who's coming. Leave `[]` and the section hides itself |
 | `DAYS` | Day-by-day plan. Add to any day's `items` array |
-| `IDEAS` | Shortlist of restaurants and activities not yet committed |
-| `PACKING` | Checklist groups |
-| `KNOW_BEFORE` | The "Good to know" cards |
 
 ### Adding an itinerary item
 
 ```js
-{ time: "7:30 PM", type: "food", title: "Dinner at ___", note: "Reservation under Diaz" }
+{
+  time: "7:30 PM", type: "food",
+  title: "Dinner at ___",
+  note: "How to get there, or anything worth knowing.",
+  address: "Full address",              // renders a 📍 Map link
+  phone: "322 000 0000",                // renders a 📞 tap-to-call link
+  phoneDial: "+523220000000",           // what the call link actually dials
+  confirmation: "OpenTable #12345",
+}
 ```
 
-`time` is optional — untimed items sort to the bottom of the day. `type` picks the icon:
-`flight`, `food`, `beach`, `tour`, `drive`, `rest`, `event`.
+Only `title` is required. `time` is optional — untimed items sort to the bottom of the day.
+`type` picks the icon: `flight`, `food`, `beach`, `tour`, `hotel`, `drive`, `rest`, `event`.
 
 ## The background photo
 
@@ -53,8 +60,5 @@ with the new author and license. The framing is controlled by `background-positi
 - **Times are local to each airport.** Puerto Vallarta is on CST (UTC−6) year-round since
   Mexico dropped daylight saving in 2022; Tijuana is on PDT (UTC−7) until Nov 1. PVR is
   1 hour ahead for this whole trip.
-- **Packing checkboxes are per-device.** They're stored in `localStorage`, so the page is
-  static and nothing syncs between people. Everyone gets their own list.
-- **The repo has to be public** for GitHub Pages to serve it on a free account. Don't put
-  anything in here you wouldn't want findable — full confirmation numbers and phone
-  numbers are worth thinking twice about.
+- **The repo is public**, which is what makes the free Pages link work. Everything here is
+  findable, including the booking confirmation numbers — that's a deliberate choice.
