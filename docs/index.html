@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Puerto Vallarta 2026</title>
+    <meta name="theme-color" content="#08131c" />
+    <meta name="description" content="Tijuana → Puerto Vallarta, Sept 30 – Oct 5, 2026. Flights, itinerary, and plans." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <style>
+      body { margin: 0; min-height: 100vh; background: #08131c; color: #e9edf2; font-family: 'DM Sans', sans-serif; }
+      #root { min-height: 100vh; }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script type="text/babel">
+      const { useState, useEffect, useMemo, useCallback } = React;
+
+      /* ========================================================================
+         TRIP DATA — this is the only part you need to edit as plans firm up.
+         Everything below renders from here. Times are local to their own city.
+         ===================================================================== */
+
+      const TRIP = {
+        title: "Puerto Vallarta",
+        year: "2026",
+        startDate: "2026-09-30",
+        endDate: "2026-10-05",
+        // ISO instant of the outbound takeoff. Tijuana is PDT (UTC-7) on this date.
+        departureInstant: "2026-09-30T09:34:00-07:00",
+      };
+
+      const FLIGHTS = [
+        {
+          id: "out",
+          label: "Outbound",
+          date: "2026-09-30",
+          from: { code: "TIJ", city: "Tijuana", tz: "PDT (UTC−7)", time: "9:34 AM" },
+          to:   { code: "PVR", city: "Puerto Vallarta", tz: "CST (UTC−6)", time: "1:17 PM" },
+          durationMins: 163,
+          airline: null,        // e.g. "Volaris"
+          flightNo: null,       // e.g. "Y4 921"
+          confirmation: null,   // e.g. "ABC123"
+          terminal: null,
+          seats: null,
+        },
+        {
+          id: "ret",
+          label: "Return",
+          date: "2026-10-05",
+          from: { code: "PVR", city: "Puerto Vallarta", tz: "CST (UTC−6)", time: "1:56 PM" },
+          to:   { code: "TIJ", city: "Tijuana", tz: "PDT (UTC−7)", time: "3:35 PM" },
+          durationMins: 159,
+          airline: null,
+          flightNo: null,
+          confirmation: null,
+          terminal: null,
+          seats: null,
+        },
+      ];
+
+      // Where you're staying. Add an entry per hotel/rental; leave [] if not booked.
+      const STAYS = [
+        // {
+        //   name: "Hotel name",
+        //   area: "Zona Romántica",
+        //   address: "Full street address, Puerto Vallarta, Jal.",
+        //   checkIn: "2026-09-30", checkOut: "2026-10-05",
+        //   checkInTime: "3:00 PM", checkOutTime: "12:00 PM",
+        //   confirmation: null, phone: null, notes: null,
+        // },
+      ];
+
+      // Who's coming. Leave [] to hide the section.
+      const TRAVELERS = [
+        // { name: "Justin", emoji: "🎯" },
+      ];
+
+      /* Day-by-day plan. One object per date; `items` can be empty and the day
+         will render an empty state. `time` is optional — untimed items sort last.
+         `type` picks the icon: flight, food, beach, tour, drive, rest, event. */
+      const DAYS = [
+        {
+          date: "2026-09-30",
+          title: "Fly down",
+          items: [
+            { time: "7:30 AM", type: "drive", title: "Get to TIJ airport", note: "Aim for ~2 hrs before takeoff for a domestic flight." },
+            { time: "9:34 AM", type: "flight", title: "TIJ → PVR takeoff", note: "2 hr 43 min in the air." },
+            { time: "1:17 PM", type: "flight", title: "Land in Puerto Vallarta", note: "Set your watch forward 1 hour." },
+          ],
+        },
+        { date: "2026-10-01", title: null, items: [] },
+        { date: "2026-10-02", title: null, items: [] },
+        { date: "2026-10-03", title: null, items: [] },
+        { date: "2026-10-04", title: null, items: [] },
+        {
+          date: "2026-10-05",
+          title: "Fly home",
+          items: [
+            { time: "11:00 AM", type: "drive", title: "Head to PVR airport", note: "Roughly 15–20 min from Zona Romántica without traffic." },
+            { time: "1:56 PM", type: "flight", title: "PVR → TIJ takeoff", note: "2 hr 39 min in the air." },
+            { time: "3:35 PM", type: "flight", title: "Land in Tijuana", note: "Clocks go back 1 hour." },
+          ],
+        },
+      ];
+
+      // Shortlist of things to eat / do. Nothing is committed until it lands in DAYS.
+      const IDEAS = [
+        { cat: "Eat",  name: "Add your spots here", note: "Edit IDEAS in docs/index.html", link: null },
+        { cat: "Do",   name: "Add activities here", note: "Marietas, Yelapa, Malecón, whale season starts Dec", link: null },
+      ];
+
+      const PACKING = [
+        { cat: "Documents", items: ["ID / passport", "Boarding passes", "Hotel confirmation", "Cash in pesos", "Backup card"] },
+        { cat: "Beach", items: ["Swimsuits", "Reef-safe sunscreen", "Sunglasses", "Hat", "Flip flops", "Dry bag"] },
+        { cat: "Clothes", items: ["Light breathable shirts", "Shorts", "One nicer outfit", "Rain shell (Oct = tail of rainy season)", "Bug spray"] },
+        { cat: "Tech", items: ["Phone + charger", "Battery pack", "Headphones", "Offline maps downloaded"] },
+      ];
+
+      const KNOW_BEFORE = [
+        { icon: "🕐", title: "1 hour ahead", body: "Puerto Vallarta runs on CST (UTC−6) year-round — Mexico dropped daylight saving in 2022. Tijuana is on PDT (UTC−7) until Nov 1. So PVR is 1 hour ahead of home for this whole trip." },
+        { icon: "🌦️", title: "End of rainy season", body: "Early October is the tail of the wet season: hot and humid, highs around 88°F / 31°C, lows near 75°F / 24°C, with short heavy afternoon storms. It's also still hurricane season, which runs through November — worth watching the forecast the week before." },
+        { icon: "💧", title: "Drink bottled water", body: "Stick to bottled or purified water, including for brushing teeth. Most hotels supply it." },
+        { icon: "💵", title: "Pay in pesos", body: "Paying in pesos beats letting a terminal convert for you. Withdraw from bank ATMs rather than airport kiosks, and decline the machine's conversion offer." },
+        { icon: "🚕", title: "Getting around", body: "Authorized airport taxis are prepaid inside the terminal. Uber operates in PVR but can't legally pick up at the airport curb — plan on a taxi for the arrival leg." },
+      ];
+
+      /* ===================== end of editable data ===================== */
+
+      const TABS = [
+        { id: "overview",  label: "Overview" },
+        { id: "flights",   label: "Flights" },
+        { id: "itinerary", label: "Itinerary" },
+        { id: "ideas",     label: "Ideas" },
+        { id: "packing",   label: "Packing" },
+        { id: "info",      label: "Good to know" },
+      ];
+
+      const TYPE_ICONS = {
+        flight: "✈️", food: "🍽️", beach: "🏖️", tour: "🗺️",
+        drive: "🚕", rest: "😴", event: "🎉", default: "📍",
+      };
+
+      const styles = `
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body { margin: 0; min-height: 100vh; background: #08131c; color: #e9edf2; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+        .app { min-height: 100vh; background: radial-gradient(ellipse at 15% 0%, #123246 0%, #08131c 55%), radial-gradient(ellipse at 85% 100%, #2a1526 0%, transparent 55%); }
+
+        .header { position: relative; padding: 26px 28px 20px; border-bottom: 1px solid rgba(255,255,255,0.07); overflow: hidden; }
+        .header::before { content: ''; position: absolute; top: -80px; right: -40px; width: 320px; height: 320px; background: radial-gradient(circle, rgba(255,168,76,0.13) 0%, transparent 70%); pointer-events: none; }
+        .header-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; flex-wrap: wrap; position: relative; }
+        .header-title { font-family: 'Bebas Neue', cursive; font-size: clamp(30px, 8vw, 52px); letter-spacing: 2px; line-height: 0.95; background: linear-gradient(120deg, #ffd27a 0%, #ff9a52 45%, #ff5f6d 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .header-sub { font-size: 11px; color: rgba(255,255,255,0.42); letter-spacing: 3px; text-transform: uppercase; margin-top: 5px; }
+        .route-chip { display: inline-flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 999px; padding: 7px 14px; font-size: 12px; font-weight: 600; letter-spacing: 1px; white-space: nowrap; }
+        .route-chip .arrow { color: #ff9a52; }
+
+        .tabs { display: flex; gap: 2px; padding: 12px 28px 0; border-bottom: 1px solid rgba(255,255,255,0.07); overflow-x: auto; scrollbar-width: none; }
+        .tabs::-webkit-scrollbar { display: none; }
+        .tab { padding: 9px 15px; border-radius: 8px 8px 0 0; background: transparent; border: none; border-bottom: 2px solid transparent; color: rgba(255,255,255,0.42); cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 500; letter-spacing: 0.4px; transition: color .18s, background .18s; white-space: nowrap; }
+        .tab:hover { color: rgba(255,255,255,0.75); }
+        .tab.active { background: rgba(255,154,82,0.11); color: #ffb069; border-bottom-color: #ff9a52; }
+
+        .content { padding: 24px 28px 56px; max-width: 980px; margin: 0 auto; }
+        .section-title { font-family: 'Bebas Neue', cursive; font-size: 22px; letter-spacing: 1.5px; color: #fff; margin-bottom: 4px; }
+        .section-note { font-size: 12.5px; color: rgba(255,255,255,0.45); margin-bottom: 16px; }
+
+        .card { background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px 20px; }
+        .card + .card { margin-top: 12px; }
+
+        .countdown { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
+        .cd-cell { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px 8px; text-align: center; }
+        .cd-num { font-family: 'Bebas Neue', cursive; font-size: clamp(28px, 8vw, 44px); line-height: 1; background: linear-gradient(120deg, #ffd27a, #ff7a5c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .cd-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-top: 5px; }
+        .cd-banner { text-align: center; font-family: 'Bebas Neue', cursive; font-size: 26px; letter-spacing: 2px; color: #ffb069; padding: 22px; }
+
+        .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
+        .stat { background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 16px; }
+        .stat-val { font-family: 'Bebas Neue', cursive; font-size: 26px; letter-spacing: 1px; color: #fff; line-height: 1.1; }
+        .stat-key { font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-top: 3px; }
+
+        .flight { background: rgba(255,255,255,0.035); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 18px 20px; }
+        .flight + .flight { margin-top: 12px; }
+        .flight-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+        .flight-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #ffb069; font-weight: 600; }
+        .flight-date { font-size: 12.5px; color: rgba(255,255,255,0.55); }
+        .leg { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
+        .leg-end { min-width: 0; }
+        .leg-end.right { text-align: right; }
+        .leg-time { font-family: 'Bebas Neue', cursive; font-size: clamp(24px, 6vw, 34px); letter-spacing: 1px; color: #fff; line-height: 1; }
+        .leg-code { font-size: 13px; font-weight: 700; letter-spacing: 1.5px; color: #ffb069; margin-top: 4px; }
+        .leg-city { font-size: 12px; color: rgba(255,255,255,0.55); }
+        .leg-tz { font-size: 10.5px; color: rgba(255,255,255,0.32); margin-top: 2px; }
+        .leg-mid { text-align: center; color: rgba(255,255,255,0.4); font-size: 11px; }
+        .leg-line { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,154,82,0.55), transparent); margin: 6px 0; min-width: 60px; }
+        .flight-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.07); }
+        .meta-pill { font-size: 11.5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); border-radius: 8px; padding: 5px 10px; color: rgba(255,255,255,0.7); }
+        .meta-pill.todo { border-style: dashed; color: rgba(255,255,255,0.34); }
+        .meta-pill b { color: #fff; font-weight: 600; }
+
+        .day { border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; overflow: hidden; }
+        .day + .day { margin-top: 12px; }
+        .day-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; padding: 14px 18px; background: rgba(255,255,255,0.04); }
+        .day-num { font-family: 'Bebas Neue', cursive; font-size: 15px; letter-spacing: 1.5px; color: #ff9a52; }
+        .day-date { font-size: 14px; font-weight: 600; color: #fff; }
+        .day-title { font-size: 12.5px; color: rgba(255,255,255,0.5); }
+        .day-body { padding: 6px 18px 16px; }
+        .item { display: grid; grid-template-columns: 62px 26px 1fr; gap: 10px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.055); }
+        .item:last-child { border-bottom: none; }
+        .item-time { font-size: 12px; font-weight: 600; color: #ffb069; padding-top: 2px; }
+        .item-time.none { color: rgba(255,255,255,0.28); font-weight: 400; }
+        .item-icon { font-size: 16px; line-height: 1.3; }
+        .item-title { font-size: 14px; font-weight: 500; color: #fff; }
+        .item-note { font-size: 12.5px; color: rgba(255,255,255,0.5); margin-top: 3px; line-height: 1.45; }
+        .empty { padding: 18px 0 8px; font-size: 13px; color: rgba(255,255,255,0.35); font-style: italic; }
+
+        .idea { display: flex; align-items: flex-start; gap: 12px; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.055); }
+        .idea:last-child { border-bottom: none; }
+        .idea-cat { font-size: 10px; letter-spacing: 1.4px; text-transform: uppercase; color: #ffb069; background: rgba(255,154,82,0.12); border-radius: 6px; padding: 4px 8px; flex-shrink: 0; margin-top: 1px; }
+        .idea-name { font-size: 14px; font-weight: 500; color: #fff; }
+        .idea-note { font-size: 12.5px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+        .idea-link { font-size: 12px; color: #ffb069; text-decoration: none; }
+        .idea-link:hover { text-decoration: underline; }
+
+        .pack-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .pack-cat { font-family: 'Bebas Neue', cursive; font-size: 16px; letter-spacing: 1.5px; color: #ffb069; margin-bottom: 8px; }
+        .check { display: flex; align-items: flex-start; gap: 9px; padding: 6px 0; cursor: pointer; user-select: none; font-size: 13.5px; color: rgba(255,255,255,0.82); line-height: 1.4; }
+        .check input { appearance: none; width: 17px; height: 17px; flex-shrink: 0; margin-top: 1px; border: 1.5px solid rgba(255,255,255,0.28); border-radius: 5px; cursor: pointer; position: relative; transition: all .15s; }
+        .check input:checked { background: linear-gradient(135deg, #ffb069, #ff7a5c); border-color: transparent; }
+        .check input:checked::after { content: '✓'; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; color: #08131c; font-size: 12px; font-weight: 700; }
+        .check.done { color: rgba(255,255,255,0.34); text-decoration: line-through; }
+        .pack-progress { font-size: 12px; color: rgba(255,255,255,0.45); margin-bottom: 14px; }
+
+        .know { display: flex; gap: 14px; padding: 16px 0; border-bottom: 1px solid rgba(255,255,255,0.055); }
+        .know:last-child { border-bottom: none; }
+        .know-icon { font-size: 22px; line-height: 1; flex-shrink: 0; }
+        .know-title { font-size: 14px; font-weight: 600; color: #fff; margin-bottom: 3px; }
+        .know-body { font-size: 13px; color: rgba(255,255,255,0.6); line-height: 1.55; }
+
+        .footer { padding: 22px 28px 34px; text-align: center; font-size: 11.5px; color: rgba(255,255,255,0.28); border-top: 1px solid rgba(255,255,255,0.06); }
+
+        @media (max-width: 640px) {
+          .header { padding: 20px 18px 16px; }
+          .tabs { padding: 10px 18px 0; }
+          .content { padding: 20px 18px 48px; }
+          .footer { padding: 20px 18px 30px; }
+          .stat-row { grid-template-columns: 1fr; }
+          .pack-grid { grid-template-columns: 1fr; }
+          .item { grid-template-columns: 56px 22px 1fr; gap: 8px; }
+          .flight, .card { padding: 16px; }
+        }
+      `;
+
+      /* ------------------------------ helpers ------------------------------ */
+
+      // Parse a plain YYYY-MM-DD as local noon so it never slips a day on any tz.
+      function asDate(ymd) {
+        return new Date(ymd + "T12:00:00");
+      }
+
+      function fmtDate(ymd, opts) {
+        return asDate(ymd).toLocaleDateString("en-US", opts || { weekday: "long", month: "long", day: "numeric" });
+      }
+
+      function fmtDuration(mins) {
+        const h = Math.floor(mins / 60);
+        const m = mins % 60;
+        return m ? h + "h " + m + "m" : h + "h";
+      }
+
+      function nightsBetween(startYmd, endYmd) {
+        return Math.round((asDate(endYmd) - asDate(startYmd)) / 86400000);
+      }
+
+      // Sort untimed items last, timed items chronologically.
+      function itemMinutes(time) {
+        if (!time) return Infinity;
+        const m = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
+        if (!m) return Infinity;
+        let h = parseInt(m[1], 10) % 12;
+        if (m[3].toUpperCase() === "PM") h += 12;
+        return h * 60 + parseInt(m[2], 10);
+      }
+
+      function useCountdown(targetIso) {
+        const target = useMemo(() => new Date(targetIso).getTime(), [targetIso]);
+        const [now, setNow] = useState(() => Date.now());
+        useEffect(() => {
+          const id = setInterval(() => setNow(Date.now()), 1000);
+          return () => clearInterval(id);
+        }, []);
+        const diff = target - now;
+        if (diff <= 0) return null;
+        return {
+          days: Math.floor(diff / 86400000),
+          hours: Math.floor((diff % 86400000) / 3600000),
+          mins: Math.floor((diff % 3600000) / 60000),
+          secs: Math.floor((diff % 60000) / 1000),
+        };
+      }
+
+      // Checklist state persists per device via localStorage — it is not shared
+      // between people, since the page is static.
+      function useChecklist(key) {
+        const [checked, setChecked] = useState(() => {
+          try {
+            return JSON.parse(localStorage.getItem(key) || "{}");
+          } catch (e) {
+            return {};
+          }
+        });
+        useEffect(() => {
+          try {
+            localStorage.setItem(key, JSON.stringify(checked));
+          } catch (e) { /* private mode — checkboxes just won't persist */ }
+        }, [key, checked]);
+        const toggle = useCallback((id) => {
+          setChecked((prev) => ({ ...prev, [id]: !prev[id] }));
+        }, []);
+        return [checked, toggle];
+      }
+
+      /* ----------------------------- components ---------------------------- */
+
+      function Countdown() {
+        const cd = useCountdown(TRIP.departureInstant);
+        if (!cd) {
+          const past = new Date(TRIP.departureInstant).getTime() < Date.now();
+          return <div className="card cd-banner">{past ? "🌴 Wheels up — enjoy it" : "Boarding time"}</div>;
+        }
+        const cells = [
+          { n: cd.days, l: "Days" },
+          { n: cd.hours, l: "Hours" },
+          { n: cd.mins, l: "Mins" },
+          { n: cd.secs, l: "Secs" },
+        ];
+        return (
+          <div className="countdown">
+            {cells.map((c) => (
+              <div className="cd-cell" key={c.l}>
+                <div className="cd-num">{String(c.n).padStart(2, "0")}</div>
+                <div className="cd-label">{c.l}</div>
+              </div>
+            ))}
+          </div>
+        );
+      }
+
+      function FlightCard({ f }) {
+        const meta = [
+          f.airline && { k: "Airline", v: f.airline },
+          f.flightNo && { k: "Flight", v: f.flightNo },
+          f.confirmation && { k: "Confirmation", v: f.confirmation },
+          f.terminal && { k: "Terminal", v: f.terminal },
+          f.seats && { k: "Seats", v: f.seats },
+        ].filter(Boolean);
+        const missing = ["airline", "flightNo", "confirmation"].filter((k) => !f[k]);
+        return (
+          <div className="flight">
+            <div className="flight-top">
+              <div className="flight-label">{f.label}</div>
+              <div className="flight-date">{fmtDate(f.date, { weekday: "short", month: "short", day: "numeric", year: "numeric" })}</div>
+            </div>
+            <div className="leg">
+              <div className="leg-end">
+                <div className="leg-time">{f.from.time}</div>
+                <div className="leg-code">{f.from.code}</div>
+                <div className="leg-city">{f.from.city}</div>
+                <div className="leg-tz">{f.from.tz}</div>
+              </div>
+              <div className="leg-mid">
+                <div>✈️</div>
+                <div className="leg-line" />
+                <div>{fmtDuration(f.durationMins)}</div>
+              </div>
+              <div className="leg-end right">
+                <div className="leg-time">{f.to.time}</div>
+                <div className="leg-code">{f.to.code}</div>
+                <div className="leg-city">{f.to.city}</div>
+                <div className="leg-tz">{f.to.tz}</div>
+              </div>
+            </div>
+            <div className="flight-meta">
+              {meta.map((m) => (
+                <div className="meta-pill" key={m.k}>{m.k}: <b>{m.v}</b></div>
+              ))}
+              {missing.map((k) => (
+                <div className="meta-pill todo" key={k}>{k === "flightNo" ? "flight number" : k} — TBD</div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      function DayCard({ day, index }) {
+        const items = useMemo(
+          () => [...day.items].sort((a, b) => itemMinutes(a.time) - itemMinutes(b.time)),
+          [day]
+        );
+        return (
+          <div className="day">
+            <div className="day-head">
+              <span className="day-num">DAY {index + 1}</span>
+              <span className="day-date">{fmtDate(day.date)}</span>
+              {day.title && <span className="day-title">· {day.title}</span>}
+            </div>
+            <div className="day-body">
+              {items.length === 0 ? (
+                <div className="empty">Wide open. Nothing locked in yet.</div>
+              ) : (
+                items.map((it, i) => (
+                  <div className="item" key={i}>
+                    <div className={"item-time" + (it.time ? "" : " none")}>{it.time || "—"}</div>
+                    <div className="item-icon">{TYPE_ICONS[it.type] || TYPE_ICONS.default}</div>
+                    <div>
+                      <div className="item-title">{it.title}</div>
+                      {it.note && <div className="item-note">{it.note}</div>}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        );
+      }
+
+      function Overview() {
+        const nights = nightsBetween(TRIP.startDate, TRIP.endDate);
+        const planned = DAYS.reduce((n, d) => n + d.items.length, 0);
+        return (
+          <div>
+            <div className="section-title">Countdown to takeoff</div>
+            <div className="section-note">Outbound departs Tijuana {fmtDate(TRIP.startDate, { month: "long", day: "numeric" })} at {FLIGHTS[0].from.time}.</div>
+            <Countdown />
+            <div className="stat-row">
+              <div className="stat">
+                <div className="stat-val">{nights} nights</div>
+                <div className="stat-key">{fmtDate(TRIP.startDate, { month: "short", day: "numeric" })} – {fmtDate(TRIP.endDate, { month: "short", day: "numeric" })}</div>
+              </div>
+              <div className="stat">
+                <div className="stat-val">{STAYS.length ? STAYS[0].name : "Not booked"}</div>
+                <div className="stat-key">Where we're staying</div>
+              </div>
+              <div className="stat">
+                <div className="stat-val">{planned} items</div>
+                <div className="stat-key">On the itinerary</div>
+              </div>
+            </div>
+            {STAYS.length > 0 && (
+              <div>
+                <div className="section-title" style={{ marginTop: 24 }}>Stay</div>
+                {STAYS.map((s) => (
+                  <div className="card" key={s.name}>
+                    <div className="item-title">{s.name}</div>
+                    {s.area && <div className="item-note">{s.area}</div>}
+                    {s.address && (
+                      <div className="item-note">
+                        <a className="idea-link" target="_blank" rel="noreferrer"
+                           href={"https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(s.address)}>
+                          {s.address} ↗
+                        </a>
+                      </div>
+                    )}
+                    <div className="flight-meta">
+                      {s.checkIn && <div className="meta-pill">Check in: <b>{fmtDate(s.checkIn, { month: "short", day: "numeric" })}{s.checkInTime ? " " + s.checkInTime : ""}</b></div>}
+                      {s.checkOut && <div className="meta-pill">Check out: <b>{fmtDate(s.checkOut, { month: "short", day: "numeric" })}{s.checkOutTime ? " " + s.checkOutTime : ""}</b></div>}
+                      {s.confirmation && <div className="meta-pill">Confirmation: <b>{s.confirmation}</b></div>}
+                      {s.phone && <div className="meta-pill">Phone: <b>{s.phone}</b></div>}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {TRAVELERS.length > 0 && (
+              <div>
+                <div className="section-title" style={{ marginTop: 24 }}>Who's going</div>
+                <div className="card">
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+                    {TRAVELERS.map((t) => (
+                      <div className="meta-pill" key={t.name}>{t.emoji} <b>{t.name}</b></div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      function Packing() {
+        const [checked, toggle] = useChecklist("pv2026-packing");
+        const all = PACKING.flatMap((g) => g.items.map((i) => g.cat + "/" + i));
+        const done = all.filter((id) => checked[id]).length;
+        return (
+          <div>
+            <div className="section-title">Packing</div>
+            <div className="section-note">Saved on this device only — everyone gets their own checkboxes.</div>
+            <div className="pack-progress">{done} of {all.length} packed</div>
+            <div className="pack-grid">
+              {PACKING.map((g) => (
+                <div className="card" key={g.cat}>
+                  <div className="pack-cat">{g.cat}</div>
+                  {g.items.map((item) => {
+                    const id = g.cat + "/" + item;
+                    return (
+                      <label className={"check" + (checked[id] ? " done" : "")} key={id}>
+                        <input type="checkbox" checked={!!checked[id]} onChange={() => toggle(id)} />
+                        <span>{item}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      function App() {
+        const [tab, setTab] = useState("overview");
+        return (
+          <div className="app">
+            <style>{styles}</style>
+
+            <header className="header">
+              <div className="header-row">
+                <div>
+                  <div className="header-title">{TRIP.title} {TRIP.year}</div>
+                  <div className="header-sub">
+                    {fmtDate(TRIP.startDate, { month: "short", day: "numeric" })} – {fmtDate(TRIP.endDate, { month: "short", day: "numeric", year: "numeric" })}
+                  </div>
+                </div>
+                <div className="route-chip">
+                  TIJ <span className="arrow">→</span> PVR <span className="arrow">→</span> TIJ
+                </div>
+              </div>
+            </header>
+
+            <nav className="tabs">
+              {TABS.map((t) => (
+                <button
+                  key={t.id}
+                  className={"tab" + (tab === t.id ? " active" : "")}
+                  onClick={() => setTab(t.id)}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </nav>
+
+            <main className="content">
+              {tab === "overview" && <Overview />}
+
+              {tab === "flights" && (
+                <div>
+                  <div className="section-title">Flights</div>
+                  <div className="section-note">Times shown are local to each airport. Puerto Vallarta is 1 hour ahead of Tijuana.</div>
+                  {FLIGHTS.map((f) => <FlightCard f={f} key={f.id} />)}
+                </div>
+              )}
+
+              {tab === "itinerary" && (
+                <div>
+                  <div className="section-title">Day by day</div>
+                  <div className="section-note">{nightsBetween(TRIP.startDate, TRIP.endDate) + 1} days on the ground. Empty days are still up for grabs.</div>
+                  {DAYS.map((d, i) => <DayCard day={d} index={i} key={d.date} />)}
+                </div>
+              )}
+
+              {tab === "ideas" && (
+                <div>
+                  <div className="section-title">Ideas</div>
+                  <div className="section-note">Nothing here is committed — move things onto the itinerary once they're decided.</div>
+                  <div className="card">
+                    {IDEAS.map((idea, i) => (
+                      <div className="idea" key={i}>
+                        <span className="idea-cat">{idea.cat}</span>
+                        <div style={{ minWidth: 0 }}>
+                          <div className="idea-name">{idea.name}</div>
+                          {idea.note && <div className="idea-note">{idea.note}</div>}
+                          {idea.link && (
+                            <a className="idea-link" href={idea.link} target="_blank" rel="noreferrer">Open ↗</a>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {tab === "packing" && <Packing />}
+
+              {tab === "info" && (
+                <div>
+                  <div className="section-title">Good to know</div>
+                  <div className="section-note">General guidance, not a forecast — check the weather again the week before.</div>
+                  <div className="card">
+                    {KNOW_BEFORE.map((k) => (
+                      <div className="know" key={k.title}>
+                        <div className="know-icon">{k.icon}</div>
+                        <div>
+                          <div className="know-title">{k.title}</div>
+                          <div className="know-body">{k.body}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </main>
+
+            <footer className="footer">
+              Puerto Vallarta {TRIP.year} · updated as plans firm up
+            </footer>
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+  </body>
+</html>
