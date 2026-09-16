@@ -95,8 +95,8 @@
       /* Day-by-day plan. One object per date; `items` can be empty and the day
          will render an empty state. `time` is optional — untimed items sort last.
          `type` picks the icon: flight, food, beach, tour, hotel, drive, rest, event.
-         Optional per item: `address` (becomes a Maps link), `phone` + `phoneDial`
-         (becomes a tap-to-call link), `confirmation`, `link`. */
+         Optional per item: `duration`, `address` (becomes a Maps link),
+         `phone` + `phoneDial` (becomes a tap-to-call link), `confirmation`, `link`. */
       const DAYS = [
         {
           date: "2026-09-30",
@@ -117,7 +117,18 @@
             },
           ],
         },
-        { date: "2026-10-01", title: null, items: [] },
+        {
+          date: "2026-10-01",
+          title: "ATV day",
+          items: [
+            {
+              time: "11:50 AM", type: "tour",
+              title: "ATV tour",
+              duration: "6 hrs",
+              note: "Booked as an all-day thing — expect to be back at the hotel around 7:30–8:00 PM once transport is counted. Worth keeping the evening free.",
+            },
+          ],
+        },
         {
           date: "2026-10-02",
           title: null,
@@ -441,8 +452,9 @@
                     <div style={{ minWidth: 0 }}>
                       <div className="item-title">{it.title}</div>
                       {it.note && <div className="item-note">{it.note}</div>}
-                      {(it.address || it.phone || it.confirmation || it.link) && (
+                      {(it.duration || it.address || it.phone || it.confirmation || it.link) && (
                         <div className="item-meta">
+                          {it.duration && <span className="item-chip static">⏱ {it.duration}</span>}
                           {it.address && (
                             <a className="item-chip" target="_blank" rel="noreferrer"
                                href={"https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(it.address)}>
