@@ -94,7 +94,7 @@
 
       /* Day-by-day plan. One object per date; `items` can be empty and the day
          will render an empty state. `time` is optional — untimed items sort last.
-         `type` picks the icon: flight, food, beach, tour, hotel, drive, rest, event.
+         `type` picks the icon: flight, food, coffee, beach, tour, hotel, drive, rest, event.
          Optional per item: `duration`, `address` (becomes a Maps link),
          `phone` + `phoneDial` (becomes a tap-to-call link), `confirmation`, `link`. */
       const DAYS = [
@@ -134,6 +134,12 @@
           title: null,
           items: [
             {
+              time: "1:00 PM", type: "coffee",
+              title: "Churros & coffee at La Romántica",
+              note: "Right at open — the shop runs 1:00–9:00 PM. Down in Amapas, south past Zona Romántica, so a taxi rather than a walk from the hotel.",
+              address: "La Romántica Churros & Cafe Bar, Calle Rodolfo Gómez 106, Amapas, 48399 Puerto Vallarta, Jal., Mexico",
+            },
+            {
               time: "9:00 PM", type: "food",
               title: "Dinner at Café des Artistes — table for 4",
               note: "In Col. Centro, roughly a 10–15 min walk south from the hotel or a short taxi.",
@@ -165,8 +171,8 @@
       ];
 
       const TYPE_ICONS = {
-        flight: "✈️", food: "🍽️", beach: "🏖️", tour: "🗺️", hotel: "🏨",
-        drive: "🚕", rest: "😴", event: "🎉", default: "📍",
+        flight: "✈️", food: "🍽️", coffee: "☕", beach: "🏖️", tour: "🗺️",
+        hotel: "🏨", drive: "🚕", rest: "😴", event: "🎉", default: "📍",
       };
 
       // Background photo. CC BY-SA 4.0 requires that the author stay credited,
@@ -179,20 +185,41 @@
       };
 
       const styles = `
+        /* Sunset warms (gold → coral) carry the primary accents; ocean teal is the
+           secondary, so the page reads as colorful rather than just orange. */
+        :root {
+          --ink: #071019;
+          --gold: #ffc46b;
+          --orange: #ff9a52;
+          --coral: #ff6b6b;
+          --teal: #3ad6c4;
+          --sky: #6ec8ff;
+          --warm-grad: linear-gradient(120deg, #ffe0a3 0%, #ffab5e 45%, #ff6b74 100%);
+          --panel: rgba(9,21,32,0.80);
+          --panel-edge: rgba(255,196,107,0.20);
+        }
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-        body { margin: 0; min-height: 100vh; background: #08131c; color: #e9edf2; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }
-        /* Body keeps the same sunset photo, heavily dimmed and fixed so it stays
-           faintly present while scrolling without fighting the text. */
-        .app { min-height: 100vh; position: relative; background-color: #08131c; }
+        body { margin: 0; min-height: 100vh; background: var(--ink); color: #eef2f6; font-family: 'DM Sans', sans-serif; -webkit-font-smoothing: antialiased; }
+        /* The sunset stays behind the content, dimmed but saturated so its color
+           still reaches the page instead of going grey. */
+        /* No background-color here on purpose: the fixed photo layers below sit at
+           z-index -1, so any background on .app would paint straight over them.
+           The base color comes from body, which paints on the canvas underneath. */
+        .app { min-height: 100vh; position: relative; }
+        /* Blurred hard so it reads as a wash of sunset color rather than a photo —
+           detailed rocks behind body text made it unreadable. scale() hides the
+           soft edges the blur leaves at the viewport boundary. */
         .app::before {
           content: ''; position: fixed; inset: 0; z-index: -1;
-          background: url('img/sunset-900.jpg') center 30% / cover no-repeat;
-          opacity: 0.16;
+          background: url('img/sunset-900.jpg') center 32% / cover no-repeat;
+          opacity: 0.55; filter: saturate(1.8) blur(26px); transform: scale(1.12);
         }
         .app::after {
           content: ''; position: fixed; inset: 0; z-index: -1;
-          background: radial-gradient(ellipse at 15% 0%, rgba(18,50,70,0.55) 0%, transparent 55%),
-                      radial-gradient(ellipse at 85% 100%, rgba(42,21,38,0.6) 0%, transparent 55%);
+          background: radial-gradient(ellipse at 12% -5%, rgba(255,138,74,0.22) 0%, transparent 52%),
+                      radial-gradient(ellipse at 88% 8%, rgba(58,214,196,0.16) 0%, transparent 48%),
+                      radial-gradient(ellipse at 78% 102%, rgba(255,90,120,0.20) 0%, transparent 52%),
+                      linear-gradient(180deg, rgba(7,16,25,0.10) 0%, rgba(7,16,25,0.42) 50%, rgba(7,16,25,0.55) 100%);
         }
 
         /* Hero: photo near full strength, scrim only where the text sits. */
@@ -213,74 +240,82 @@
 
         .tabs { position: sticky; top: 0; z-index: 5; display: flex; gap: 2px; padding: 12px 28px 0; background: rgba(8,19,28,0.86); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.09); overflow-x: auto; scrollbar-width: none; }
         .tabs::-webkit-scrollbar { display: none; }
-        .tab { padding: 9px 15px; border-radius: 8px 8px 0 0; background: transparent; border: none; border-bottom: 2px solid transparent; color: rgba(255,255,255,0.42); cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 500; letter-spacing: 0.4px; transition: color .18s, background .18s; white-space: nowrap; }
-        .tab:hover { color: rgba(255,255,255,0.75); }
-        .tab.active { background: rgba(255,154,82,0.11); color: #ffb069; border-bottom-color: #ff9a52; }
+        .tab { padding: 9px 16px; border-radius: 999px; margin-bottom: 10px; background: transparent; border: 1px solid transparent; color: rgba(255,255,255,0.5); cursor: pointer; font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 600; letter-spacing: 0.4px; transition: all .18s; white-space: nowrap; }
+        .tab:hover { color: #fff; border-color: rgba(255,196,107,0.35); }
+        .tab.active { background: var(--warm-grad); color: #2a1206; border-color: transparent; box-shadow: 0 3px 14px rgba(255,140,70,0.32); }
 
         .content { padding: 24px 28px 56px; max-width: 980px; margin: 0 auto; }
-        .section-title { font-family: 'Bebas Neue', cursive; font-size: 22px; letter-spacing: 1.5px; color: #fff; margin-bottom: 4px; }
-        .section-note { font-size: 12.5px; color: rgba(255,255,255,0.45); margin-bottom: 16px; }
+        .section-title { font-family: 'Bebas Neue', cursive; font-size: 24px; letter-spacing: 1.5px; margin-bottom: 4px; background: var(--warm-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .section-note { font-size: 12.5px; color: rgba(255,255,255,0.58); margin-bottom: 16px; }
 
-        .card { background: rgba(9,22,32,0.62); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px 20px; }
+        .card { background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 14px; padding: 18px 20px; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
         .card + .card { margin-top: 12px; }
 
         .countdown { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 16px; }
-        .cd-cell { background: rgba(9,22,32,0.62); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 16px 8px; text-align: center; }
-        .cd-num { font-family: 'Bebas Neue', cursive; font-size: clamp(28px, 8vw, 44px); line-height: 1; background: linear-gradient(120deg, #ffd27a, #ff7a5c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
-        .cd-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-top: 5px; }
-        .cd-banner { text-align: center; font-family: 'Bebas Neue', cursive; font-size: 26px; letter-spacing: 2px; color: #ffb069; padding: 22px; }
+        .cd-cell { position: relative; overflow: hidden; background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 14px; padding: 16px 8px; text-align: center; box-shadow: inset 0 1px 0 rgba(255,220,170,0.13); }
+        .cd-cell::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse at 50% 120%, rgba(255,154,82,0.22) 0%, transparent 70%); pointer-events: none; }
+        .cd-num { position: relative; font-family: 'Bebas Neue', cursive; font-size: clamp(28px, 8vw, 44px); line-height: 1; background: linear-gradient(120deg, #ffdf9a, #ff7a5c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .cd-label { position: relative; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: rgba(255,255,255,0.55); margin-top: 5px; }
+        .cd-banner { text-align: center; font-family: 'Bebas Neue', cursive; font-size: 26px; letter-spacing: 2px; color: var(--gold); padding: 22px; }
 
         .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; }
-        .stat { background: rgba(9,22,32,0.62); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; padding: 14px 16px; }
+        .stat { position: relative; overflow: hidden; background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 12px; padding: 15px 16px; }
+        .stat::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--warm-grad); }
+        .stat:nth-child(2)::before { background: linear-gradient(180deg, var(--teal), var(--sky)); }
         .stat-val { font-family: 'Bebas Neue', cursive; font-size: 26px; letter-spacing: 1px; color: #fff; line-height: 1.1; }
-        .stat-key { font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: rgba(255,255,255,0.4); margin-top: 3px; }
+        .stat-key { font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; color: rgba(255,255,255,0.5); margin-top: 3px; }
 
-        .flight { background: rgba(9,22,32,0.62); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 18px 20px; }
+        .flight { position: relative; overflow: hidden; background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 16px; padding: 18px 20px; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+        .flight::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--warm-grad); }
         .flight + .flight { margin-top: 12px; }
         .flight-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
-        .flight-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: #ffb069; font-weight: 600; }
-        .flight-date { font-size: 12.5px; color: rgba(255,255,255,0.55); }
+        .flight-label { font-size: 10px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); font-weight: 700; }
+        .flight-date { font-size: 12.5px; color: rgba(255,255,255,0.65); }
         .leg { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; }
         .leg-end { min-width: 0; }
         .leg-end.right { text-align: right; }
         .leg-time { font-family: 'Bebas Neue', cursive; font-size: clamp(24px, 6vw, 34px); letter-spacing: 1px; color: #fff; line-height: 1; }
-        .leg-code { font-size: 13px; font-weight: 700; letter-spacing: 1.5px; color: #ffb069; margin-top: 4px; }
-        .leg-city { font-size: 12px; color: rgba(255,255,255,0.55); }
-        .leg-tz { font-size: 10.5px; color: rgba(255,255,255,0.32); margin-top: 2px; }
-        .leg-mid { text-align: center; color: rgba(255,255,255,0.4); font-size: 11px; }
-        .leg-line { height: 1px; background: linear-gradient(90deg, transparent, rgba(255,154,82,0.55), transparent); margin: 6px 0; min-width: 60px; }
-        .flight-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,255,255,0.07); }
-        .meta-pill { font-size: 11.5px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); border-radius: 8px; padding: 5px 10px; color: rgba(255,255,255,0.7); }
-        .meta-pill.todo { border-style: dashed; color: rgba(255,255,255,0.34); }
+        .leg-code { font-size: 13px; font-weight: 700; letter-spacing: 1.5px; color: var(--gold); margin-top: 4px; }
+        .leg-city { font-size: 12px; color: rgba(255,255,255,0.68); }
+        .leg-tz { font-size: 10.5px; color: rgba(255,255,255,0.42); margin-top: 2px; }
+        .leg-mid { text-align: center; color: var(--teal); font-size: 11px; font-weight: 600; }
+        .leg-line { height: 2px; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--teal), transparent); margin: 6px 0; min-width: 60px; }
+        .flight-meta { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid rgba(255,196,107,0.16); }
+        .meta-pill { font-size: 11.5px; background: rgba(255,196,107,0.07); border: 1px solid rgba(255,196,107,0.20); border-radius: 8px; padding: 5px 10px; color: rgba(255,255,255,0.78); }
         .meta-pill b { color: #fff; font-weight: 600; }
 
-        .day { background: rgba(9,22,32,0.48); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; overflow: hidden; }
+        .day { position: relative; background: var(--panel); border: 1px solid var(--panel-edge); border-radius: 14px; overflow: hidden; backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
         .day + .day { margin-top: 12px; }
-        .day-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; padding: 14px 18px; background: rgba(9,22,32,0.62); }
-        .day-num { font-family: 'Bebas Neue', cursive; font-size: 15px; letter-spacing: 1.5px; color: #ff9a52; }
-        .day-date { font-size: 14px; font-weight: 600; color: #fff; }
-        .day-title { font-size: 12.5px; color: rgba(255,255,255,0.5); }
+        .day::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--warm-grad); }
+        /* Days with nothing booked get a cooler edge so full days stand out. */
+        .day.open::before { background: linear-gradient(180deg, rgba(110,200,255,0.5), rgba(58,214,196,0.35)); }
+        .day-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; padding: 14px 18px; background: linear-gradient(100deg, rgba(255,154,82,0.14) 0%, rgba(255,107,107,0.07) 45%, transparent 100%); }
+        .day.open .day-head { background: linear-gradient(100deg, rgba(110,200,255,0.10) 0%, transparent 80%); }
+        .day-num { font-family: 'Bebas Neue', cursive; font-size: 16px; letter-spacing: 1.5px; background: var(--warm-grad); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .day.open .day-num { background: linear-gradient(120deg, #9fdcff, #6ec8ff); -webkit-background-clip: text; background-clip: text; }
+        .day-date { font-size: 14.5px; font-weight: 600; color: #fff; }
+        .day-title { font-size: 12px; font-weight: 600; letter-spacing: 0.6px; text-transform: uppercase; color: var(--teal); }
         .day-body { padding: 6px 18px 16px; }
         .item { display: grid; grid-template-columns: 62px 26px 1fr; gap: 10px; padding: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.055); }
         .item:last-child { border-bottom: none; }
-        .item-time { font-size: 12px; font-weight: 600; color: #ffb069; padding-top: 2px; }
-        .item-time.none { color: rgba(255,255,255,0.28); font-weight: 400; }
-        .item-icon { font-size: 16px; line-height: 1.3; }
-        .item-title { font-size: 14px; font-weight: 500; color: #fff; }
-        .item-note { font-size: 12.5px; color: rgba(255,255,255,0.5); margin-top: 3px; line-height: 1.45; }
-        .empty { padding: 18px 0 8px; font-size: 13px; color: rgba(255,255,255,0.35); font-style: italic; }
-        .item-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
-        .item-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; color: rgba(255,255,255,0.78); background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12); border-radius: 7px; padding: 4px 9px; text-decoration: none; white-space: nowrap; }
-        .item-chip:hover { border-color: rgba(255,176,105,0.6); color: #ffb069; }
-        .item-chip.static { color: rgba(255,255,255,0.5); background: transparent; border-style: dashed; }
-        .item-chip.static:hover { border-color: rgba(255,255,255,0.12); color: rgba(255,255,255,0.5); }
+        .item-time { font-size: 12px; font-weight: 700; color: var(--gold); padding-top: 2px; }
+        .item-time.none { color: rgba(255,255,255,0.32); font-weight: 400; }
+        .item-icon { font-size: 17px; line-height: 1.25; }
+        .item-title { font-size: 14.5px; font-weight: 600; color: #fff; }
+        .item-note { font-size: 12.5px; color: rgba(255,255,255,0.62); margin-top: 3px; line-height: 1.45; }
+        .empty { padding: 18px 0 8px; font-size: 13px; color: rgba(160,205,235,0.6); font-style: italic; }
+        .item-meta { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 9px; }
+        .item-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; font-weight: 600; color: var(--teal); background: rgba(58,214,196,0.10); border: 1px solid rgba(58,214,196,0.32); border-radius: 7px; padding: 4px 9px; text-decoration: none; white-space: nowrap; transition: all .15s; }
+        .item-chip:hover { background: rgba(58,214,196,0.2); border-color: var(--teal); }
+        .item-chip.static { color: rgba(255,196,107,0.85); background: rgba(255,196,107,0.07); border-color: rgba(255,196,107,0.28); border-style: dashed; font-weight: 500; }
+        .item-chip.static:hover { background: rgba(255,196,107,0.07); border-color: rgba(255,196,107,0.28); }
 
-        .stay-name { font-family: 'Bebas Neue', cursive; font-size: 21px; letter-spacing: 1px; color: #fff; line-height: 1.15; }
-        .stay-room { font-size: 13px; color: #ffb069; margin-top: 6px; }
+        .stay-name { font-family: 'Bebas Neue', cursive; font-size: 22px; letter-spacing: 1px; color: #fff; line-height: 1.15; }
+        .stay-room { font-size: 13px; font-weight: 600; color: var(--gold); margin-top: 6px; }
         .stay-flag { margin-top: 12px; font-size: 12.5px; line-height: 1.5; color: #ffd08a; background: rgba(255,168,76,0.09); border: 1px solid rgba(255,168,76,0.28); border-radius: 9px; padding: 9px 11px; }
 
-        .text-link { font-size: 12px; color: #ffb069; text-decoration: none; }
-        .text-link:hover { text-decoration: underline; }
+        .text-link { font-size: 12px; color: var(--teal); text-decoration: none; border-bottom: 1px solid rgba(58,214,196,0.35); }
+        .text-link:hover { color: #fff; border-bottom-color: #fff; }
 
         /* Section headings inside a tab, below the first one. */
         .subsection { margin-top: 30px; }
@@ -391,7 +426,7 @@
           f.terminal && { k: "Terminal", v: f.terminal },
           f.seats && { k: "Seats", v: f.seats },
         ].filter(Boolean);
-        const missing = ["airline", "flightNo", "confirmation"].filter((k) => !f[k]);
+        // Only show what we actually have — no placeholders for unfilled fields.
         return (
           <div className="flight">
             <div className="flight-top">
@@ -417,14 +452,13 @@
                 <div className="leg-tz">{f.to.tz}</div>
               </div>
             </div>
-            <div className="flight-meta">
-              {meta.map((m) => (
-                <div className="meta-pill" key={m.k}>{m.k}: <b>{m.v}</b></div>
-              ))}
-              {missing.map((k) => (
-                <div className="meta-pill todo" key={k}>{k === "flightNo" ? "flight number" : k} — TBD</div>
-              ))}
-            </div>
+            {meta.length > 0 && (
+              <div className="flight-meta">
+                {meta.map((m) => (
+                  <div className="meta-pill" key={m.k}>{m.k}: <b>{m.v}</b></div>
+                ))}
+              </div>
+            )}
           </div>
         );
       }
@@ -435,7 +469,7 @@
           [day]
         );
         return (
-          <div className="day">
+          <div className={"day" + (items.length === 0 ? " open" : "")}>
             <div className="day-head">
               <span className="day-num">DAY {index + 1}</span>
               <span className="day-date">{fmtDate(day.date)}</span>

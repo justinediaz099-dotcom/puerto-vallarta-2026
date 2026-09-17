@@ -41,7 +41,7 @@ updates within a minute or two.
 ```
 
 Only `title` is required. `time` is optional — untimed items sort to the bottom of the day.
-`type` picks the icon: `flight`, `food`, `beach`, `tour`, `hotel`, `drive`, `rest`, `event`.
+`type` picks the icon: `flight`, `food`, `coffee`, `beach`, `tour`, `hotel`, `drive`, `rest`, `event`.
 
 ## The background photo
 
